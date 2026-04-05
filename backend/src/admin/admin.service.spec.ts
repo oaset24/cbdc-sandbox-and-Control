@@ -1,11 +1,13 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { BadRequestException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { AdminService } from "./admin.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { BlockchainService } from "../blockchain/blockchain.service";
 
 describe("AdminService", () => {
   let service: AdminService;
+  const configMock = { get: jest.fn() };
   const prismaMock = {
     auditLog: { create: jest.fn() },
     user: { count: jest.fn() },
@@ -29,6 +31,7 @@ describe("AdminService", () => {
         AdminService,
         { provide: PrismaService, useValue: prismaMock },
         { provide: BlockchainService, useValue: blockchainMock },
+        { provide: ConfigService, useValue: configMock },
       ],
     }).compile();
     service = module.get(AdminService);
@@ -50,7 +53,19 @@ describe("AdminService", () => {
     expect(prismaMock.auditLog.create).toHaveBeenCalled();
   });
 
+  it("systemStats liefert cbdcContractAddress aus Config", async () => {
+    configMock.get.mockReturnValue("  0xabc  ");
+    blockchainMock.isEnabled.mockReturnValue(false);
+    prismaMock.user.count.mockResolvedValueOnce(1).mockResolvedValueOnce(1).mockResolvedValueOnce(0);
+    prismaMock.transaction.count.mockResolvedValue(0);
+    prismaMock.transaction.aggregate.mockResolvedValue({ _sum: { amount: 0 } });
+    prismaMock.blacklist.count.mockResolvedValue(0);
+    const stats = await service.systemStats();
+    expect(stats.cbdcContractAddress).toBe("0xabc");
+  });
+
   it("systemStats aggregiert Prisma (Reihenfolge der user.count-Aufrufe)", async () => {
+    configMock.get.mockReturnValue(undefined);
     blockchainMock.isEnabled.mockReturnValue(false);
     prismaMock.user.count
       .mockResolvedValueOnce(5)
@@ -68,5 +83,6 @@ describe("AdminService", () => {
     expect(stats.blacklistCount).toBe(1);
     expect(stats.pendingKycUsers).toBe(2);
     expect(stats.totalSupplyWei).toBeNull();
+    expect(stats.cbdcContractAddress).toBeNull();
   });
 });

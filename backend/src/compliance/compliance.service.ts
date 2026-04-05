@@ -64,6 +64,57 @@ export class ComplianceService {
     return { allowed: true, amlFlag };
   }
 
+  /** Kontenübersicht für Compliance-Monitor (geflaggte Aktivität + on-chain Freeze). */
+  async accountMonitor(): Promise<
+    Array<{
+      id: string;
+      email: string;
+      role: string;
+      kycStatus: string;
+      walletAddress: string | null;
+      isActive: boolean;
+      createdAt: Date;
+      hasFlaggedActivity: boolean;
+      isOnChainFrozen: boolean;
+    }>
+  > {
+    const users = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        kycStatus: true,
+        walletAddress: true,
+        isActive: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const flaggedRows = await this.prisma.transaction.findMany({
+      where: { OR: [{ flagged: true }, { status: "FLAGGED" }] },
+      select: { userId: true },
+      distinct: ["userId"],
+    });
+    const flaggedUserIds = new Set(flaggedRows.map((r) => r.userId));
+
+    const rows = await Promise.all(
+      users.map(async (u) => {
+        let isOnChainFrozen = false;
+        if (u.walletAddress && this.blockchain.isEnabled()) {
+          isOnChainFrozen = await this.blockchain.isFrozen(u.walletAddress);
+        }
+        return {
+          ...u,
+          hasFlaggedActivity: flaggedUserIds.has(u.id),
+          isOnChainFrozen,
+        };
+      }),
+    );
+
+    return rows;
+  }
+
   async assertCustodialWalletMatchesUser(userWalletInDb: string | null): Promise<void> {
     const onChainUser = this.blockchain.getUserWalletAddress();
     if (!this.blockchain.isEnabled() || !onChainUser) return;

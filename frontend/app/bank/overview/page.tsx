@@ -5,7 +5,11 @@ import { ApiError, api } from "@/lib/api";
 import { StatsCard } from "@/components/dashboard/stats-card";
 
 export default function BankOverviewPage() {
-  const statsQ = useQuery({ queryKey: ["systemStats"], queryFn: () => api.systemStats() });
+  const statsQ = useQuery({
+    queryKey: ["systemStats"],
+    queryFn: () => api.systemStats(),
+    refetchInterval: 15_000,
+  });
   const usersQ = useQuery({ queryKey: ["users"], queryFn: () => api.users() });
 
   const customers = usersQ.data?.filter((u) => u.role === "USER").length ?? "—";

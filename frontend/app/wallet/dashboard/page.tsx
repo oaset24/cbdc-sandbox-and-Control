@@ -17,6 +17,13 @@ export default function WalletDashboardPage() {
     enabled: !!user,
   });
 
+  const chainQ = useQuery({
+    queryKey: ["onChainBalance"],
+    queryFn: () => api.myOnChainBalance(),
+    enabled: !!user,
+    refetchInterval: 12_000,
+  });
+
   const txsQ = useQuery({
     queryKey: ["txUser", user?.id],
     queryFn: () => api.transactionsForUser(user!.id),
@@ -26,6 +33,16 @@ export default function WalletDashboardPage() {
   const u: AuthUser | null | undefined = meQ.data ?? user;
   const recent = (txsQ.data ?? []).slice(0, 5);
 
+  const envContract = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS?.trim().toLowerCase() ?? "";
+  const apiContract = chainQ.data?.contractAddress?.trim().toLowerCase() ?? "";
+  const contractMismatch = Boolean(envContract && apiContract && envContract !== apiContract);
+
+  const balanceLabel = chainQ.isPending
+    ? "…"
+    : chainQ.data?.balanceFormatted != null
+      ? `${Number(chainQ.data.balanceFormatted).toLocaleString("de-DE", { maximumFractionDigits: 6 })} CBDC`
+      : "— CBDC";
+
   return (
     <div className="space-y-6">
       <Card className="border-slate-800">
@@ -34,10 +51,30 @@ export default function WalletDashboardPage() {
           <CardDescription>Übersicht und letzte Bewegungen</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-4xl font-bold tracking-tight text-blue-400">— CBDC</p>
-          <p className="mt-2 text-sm text-slate-500">
-            On-Chain-Saldo kann später über öffentliche Vertragsadresse + ethers im Browser ergänzt werden.
-          </p>
+          <p className="text-4xl font-bold tracking-tight text-blue-400">{balanceLabel}</p>
+          {chainQ.data && !chainQ.data.chainAvailable ? (
+            <p className="mt-2 text-sm text-amber-400/90">
+              Blockchain im Backend nicht konfiguriert (BLOCKCHAIN_RPC_URL / CBDC_CONTRACT_ADDRESS) — angezeigter Wert ist Platzhalter.
+            </p>
+          ) : null}
+          {chainQ.data?.address == null ? (
+            <p className="mt-2 text-sm text-slate-500">Keine Wallet-Adresse im Profil — On-Chain-Saldo nicht abfragbar.</p>
+          ) : (
+            <p className="mt-2 font-mono text-xs text-slate-500">Wallet: {chainQ.data.address}</p>
+          )}
+          {apiContract ? (
+            <p className="mt-1 font-mono text-xs text-slate-600">
+              Vertrag (Backend): {chainQ.data?.contractAddress}
+            </p>
+          ) : null}
+          {envContract ? (
+            <p className="mt-1 font-mono text-xs text-slate-600">NEXT_PUBLIC_CONTRACT_ADDRESS: {process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}</p>
+          ) : null}
+          {contractMismatch ? (
+            <p className="mt-2 text-sm text-amber-400">
+              Hinweis: Frontend- und Backend-Vertragsadresse weichen ab — bitte .env.local und backend/.env angleichen.
+            </p>
+          ) : null}
           {u ? (
             <div className="mt-4 flex items-center gap-2 text-sm text-slate-400">
               <span>KYC:</span>
@@ -46,9 +83,15 @@ export default function WalletDashboardPage() {
           ) : null}
         </CardContent>
       </Card>
-      {meQ.error || txsQ.error ? (
+      {meQ.error || txsQ.error || chainQ.error ? (
         <p className="text-sm text-red-400">
-          {meQ.error instanceof ApiError ? meQ.error.message : txsQ.error instanceof ApiError ? txsQ.error.message : "Fehler"}
+          {meQ.error instanceof ApiError
+            ? meQ.error.message
+            : txsQ.error instanceof ApiError
+              ? txsQ.error.message
+              : chainQ.error instanceof ApiError
+                ? chainQ.error.message
+                : "Fehler"}
         </p>
       ) : null}
       <div>

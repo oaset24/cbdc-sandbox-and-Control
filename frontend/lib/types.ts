@@ -15,6 +15,14 @@ export type LoginResponse = {
   user: AuthUser;
 };
 
+export type OnChainBalance = {
+  address: string | null;
+  contractAddress: string | null;
+  balanceWei: string | null;
+  balanceFormatted: string | null;
+  chainAvailable: boolean;
+};
+
 export type SystemStats = {
   userCount: number;
   activeUsers: number;
@@ -23,6 +31,20 @@ export type SystemStats = {
   blacklistCount: number;
   pendingKycUsers: number;
   totalSupplyWei: string | null;
+  /** Aus Backend-Env CBDC_CONTRACT_ADDRESS (ab API-Version mit AdminService-Config). */
+  cbdcContractAddress?: string | null;
+};
+
+export type ComplianceMonitorAccount = {
+  id: string;
+  email: string;
+  role: Role;
+  kycStatus: KYCStatus;
+  walletAddress: string | null;
+  isActive: boolean;
+  createdAt: string;
+  hasFlaggedActivity: boolean;
+  isOnChainFrozen: boolean;
 };
 
 export type TransactionRow = {

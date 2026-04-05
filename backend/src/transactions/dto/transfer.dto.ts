@@ -11,7 +11,7 @@ export class TransferDto {
   @Matches(/^\d+(\.\d+)?$/, { message: "amount muss eine positive Dezimalzahl sein" })
   amount!: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: "Optionaler Verwendungszweck / Referenz" })
   @IsOptional()
   @IsString()
   @MinLength(0)

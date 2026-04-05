@@ -57,7 +57,7 @@ export function dashboardPathForRole(role: string): string {
     case "USER":
       return "/wallet/dashboard";
     case "COMPLIANCE":
-      return "/compliance/flagged";
+      return "/compliance/monitor";
     default:
       return "/login";
   }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApiError, api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function MintBurnPage() {
+  const qc = useQueryClient();
   const [mintTo, setMintTo] = useState("");
   const [mintAmt, setMintAmt] = useState("");
   const [burnFrom, setBurnFrom] = useState("");
@@ -27,6 +29,7 @@ export default function MintBurnPage() {
     try {
       const r = await api.mint(mintTo, mintAmt);
       pushLog(`Mint tx: ${r.txHash}`);
+      await qc.invalidateQueries({ queryKey: ["systemStats"] });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Mint fehlgeschlagen");
     } finally {
@@ -41,6 +44,7 @@ export default function MintBurnPage() {
     try {
       const r = await api.burn(burnFrom, burnAmt);
       pushLog(`Burn tx: ${r.txHash}`);
+      await qc.invalidateQueries({ queryKey: ["systemStats"] });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Burn fehlgeschlagen");
     } finally {

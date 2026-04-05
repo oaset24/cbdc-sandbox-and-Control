@@ -7,8 +7,9 @@ import { BlockchainService } from "../blockchain/blockchain.service";
 describe("ComplianceService", () => {
   let service: ComplianceService;
   const prismaMock = {
-    user: { findUnique: jest.fn() },
+    user: { findUnique: jest.fn(), findMany: jest.fn() },
     blacklist: { findUnique: jest.fn() },
+    transaction: { findMany: jest.fn() },
   };
   const blockchainMock = {
     isEnabled: jest.fn(),
@@ -60,5 +61,26 @@ describe("ComplianceService", () => {
     prismaMock.user.findUnique.mockResolvedValue(null);
     const r = await service.validateUserTransfer("missing", "0x2222222222222222222222222222222222222222", "1");
     expect(r.allowed).toBe(false);
+  });
+
+  it("accountMonitor markiert geflaggte Nutzer und on-chain Freeze", async () => {
+    prismaMock.user.findMany.mockResolvedValue([
+      {
+        id: "u1",
+        email: "a@x.de",
+        role: "USER",
+        kycStatus: "VERIFIED",
+        walletAddress: "0x1111111111111111111111111111111111111111",
+        isActive: true,
+        createdAt: new Date(),
+      },
+    ]);
+    prismaMock.transaction.findMany.mockResolvedValue([{ userId: "u1" }]);
+    blockchainMock.isEnabled.mockReturnValue(true);
+    blockchainMock.isFrozen.mockResolvedValue(true);
+    const rows = await service.accountMonitor();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].hasFlaggedActivity).toBe(true);
+    expect(rows[0].isOnChainFrozen).toBe(true);
   });
 });

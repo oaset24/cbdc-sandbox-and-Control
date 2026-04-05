@@ -1,4 +1,14 @@
-import type { AuthUser, AuditLogRow, BlacklistRow, LoginResponse, SystemStats, TransactionRow, UserRow } from "./types";
+import type {
+  AuthUser,
+  AuditLogRow,
+  BlacklistRow,
+  ComplianceMonitorAccount,
+  LoginResponse,
+  OnChainBalance,
+  SystemStats,
+  TransactionRow,
+  UserRow,
+} from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -73,7 +83,9 @@ export const api = {
 
   me: () => apiFetch<AuthUser>("/auth/me"),
 
-  systemStats: () => apiFetch<SystemStats>("/admin/system-stats"),
+  myOnChainBalance: () => apiFetch<OnChainBalance>("/blockchain/balance/me"),
+
+  systemStats: () => apiFetch<SystemStats>("/dashboard/system-stats"),
 
   users: () => apiFetch<UserRow[]>("/users"),
 
@@ -136,4 +148,6 @@ export const api = {
       pendingKycUsers: number;
       recentFlagged: TransactionRow[];
     }>("/compliance/report"),
+
+  complianceMonitorAccounts: () => apiFetch<ComplianceMonitorAccount[]>("/compliance/monitor-accounts"),
 };

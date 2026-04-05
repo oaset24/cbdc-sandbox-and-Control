@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function ComplianceIndexPage() {
-  redirect("/compliance/flagged");
+  redirect("/compliance/monitor");
 }

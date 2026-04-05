@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { BlockchainService } from "../blockchain/blockchain.service";
@@ -11,6 +12,7 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly blockchain: BlockchainService,
+    private readonly config: ConfigService,
   ) {}
 
   private async audit(actorId: string, action: string, details: Prisma.InputJsonValue) {
@@ -95,6 +97,7 @@ export class AdminService {
       const wei = await this.blockchain.getTotalSupply();
       totalSupply = wei.toString();
     }
+    const cbdcContractAddress = this.config.get<string>("CBDC_CONTRACT_ADDRESS")?.trim() || null;
     return {
       userCount: users,
       activeUsers,
@@ -103,6 +106,7 @@ export class AdminService {
       blacklistCount: blacklist,
       pendingKycUsers: pendingKyc,
       totalSupplyWei: totalSupply,
+      cbdcContractAddress,
     };
   }
 }

@@ -1,5 +1,9 @@
-# Postgres auf Host-Port 5433, damit kein Konflikt mit einem lokalen PostgreSQL auf 5432 (Windows) entsteht.
-# Passwort nach erstem Start geändert? Volume löschen: docker compose down -v && docker compose up -d
+# Vollständiger Stack: Postgres, Redis, Backend (NestJS), Frontend (Next.js)
+# Start: docker compose up -d --build
+# Swagger: http://localhost:3001/api/docs · App: http://localhost:3000
+#
+# Blockchain (Hardhat o. Ä.) läuft typischerweise auf dem Host: im Backend z. B.
+# BLOCKCHAIN_RPC_URL=http://host.docker.internal:8545 setzen (Windows/macOS).
 version: "3.8"
 
 services:
@@ -11,11 +15,65 @@ services:
       POSTGRES_PASSWORD: cbdc_secure_pass
     ports:
       - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cbdc_user -d cbdc_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - cbdc
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    networks:
+      - cbdc
 
-  # Backend und Frontend lassen wir erst mal weg, 
-  # bis der Code von Cursor fertig generiert ist.
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://cbdc_user:cbdc_secure_pass@postgres:5432/cbdc_db?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-cbdc_docker_jwt_change_me}
+      CORS_ORIGINS: http://localhost:3000
+      BLOCKCHAIN_RPC_URL: ${BLOCKCHAIN_RPC_URL:-}
+      CBDC_CONTRACT_ADDRESS: ${CBDC_CONTRACT_ADDRESS:-}
+      BLOCKCHAIN_ADMIN_PRIVATE_KEY: ${BLOCKCHAIN_ADMIN_PRIVATE_KEY:-}
+      BLOCKCHAIN_USER_WALLET_PRIVATE_KEY: ${BLOCKCHAIN_USER_WALLET_PRIVATE_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - cbdc
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3001
+        NEXT_PUBLIC_CONTRACT_ADDRESS: ${CBDC_CONTRACT_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - cbdc
+
+volumes:
+  postgres_data:
+
+networks:
+  cbdc:
+    driver: bridge
