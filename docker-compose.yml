@@ -1,0 +1,21 @@
+# Postgres auf Host-Port 5433, damit kein Konflikt mit einem lokalen PostgreSQL auf 5432 (Windows) entsteht.
+# Passwort nach erstem Start geändert? Volume löschen: docker compose down -v && docker compose up -d
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: cbdc_db
+      POSTGRES_USER: cbdc_user
+      POSTGRES_PASSWORD: cbdc_secure_pass
+    ports:
+      - "5433:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # Backend und Frontend lassen wir erst mal weg, 
+  # bis der Code von Cursor fertig generiert ist.

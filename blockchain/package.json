@@ -1,0 +1,31 @@
+{
+  "name": "cbdc-blockchain",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.ts",
+    "seed": "hardhat run scripts/seed.ts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@types/bcrypt": "^5.0.2",
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "@types/pg": "^8.11.10",
+    "chai": "^4.4.1",
+    "ethers": "^6.11.1",
+    "hardhat": "^2.22.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.1",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "pg": "^8.13.1"
+  }
+}

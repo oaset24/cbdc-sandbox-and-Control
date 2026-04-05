@@ -1,0 +1,20 @@
+/** Minimales ABI (ethers Human-Readable) für CBDCToken – synchron mit blockchain/contracts/CBDCToken.sol */
+export const CBDC_TOKEN_ABI = [
+  "function mint(address to, uint256 amount) external",
+  "function burn(address from, uint256 amount) external",
+  "function freezeAccount(address user) external",
+  "function unfreezeAccount(address user) external",
+  "function forceTransfer(address from, address to, uint256 amount) external",
+  "function transfer(address to, uint256 amount) external returns (bool)",
+  "function isAccountFrozen(address user) external view returns (bool)",
+  "function transactionLimit() external view returns (uint256)",
+  "function dailyLimit(address user) external view returns (uint256)",
+  "function balanceOf(address account) external view returns (uint256)",
+  "function totalSupply() external view returns (uint256)",
+  "event TokensMinted(address indexed to, uint256 amount, address indexed by)",
+  "event TokensBurned(address indexed from, uint256 amount, address indexed by)",
+  "event AccountFrozen(address indexed user, address indexed by)",
+  "event AccountUnfrozen(address indexed user, address indexed by)",
+  "event ForceTransfer(address indexed from, address indexed to, uint256 amount)",
+  "event LimitSet(address indexed user, uint256 limit)",
+] as const;

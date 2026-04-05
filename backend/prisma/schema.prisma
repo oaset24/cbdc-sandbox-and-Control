@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "windows", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  password      String
+  role          Role          @default(USER)
+  kycStatus     KYCStatus     @default(PENDING)
+  walletAddress String?       @unique
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  transactions  Transaction[]
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  from      String
+  to        String
+  amount    Float
+  purpose   String?
+  status    TxStatus @default(PENDING)
+  flagged   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  userId    String
+  details   Json
+  createdAt DateTime @default(now())
+}
+
+model Blacklist {
+  id        String   @id @default(uuid())
+  address   String   @unique
+  reason    String
+  addedBy   String
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  CENTRAL_BANK
+  BANK
+  COMPLIANCE
+  USER
+}
+
+enum KYCStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum TxStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  FLAGGED
+}
